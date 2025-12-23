@@ -43,7 +43,7 @@ class Database:
 # =============================Database
 
 db = None
-
+db = Database("finance.db")
 
 # =========================================tk
 
@@ -83,7 +83,6 @@ frame_two.rowconfigure(1 , weight=1)
 frame_three.columnconfigure(0 ,weight=1)
 frame_three.columnconfigure(1 ,weight=1)
 frame_three.columnconfigure(2 ,weight=1)
-frame_three.columnconfigure(3 ,weight=1)
 frame_three.rowconfigure(0 , weight=1)
 
 
@@ -103,7 +102,6 @@ lal_cost.grid(row = 1,column=2 )
 
 
 
-
 lal_amount =Label(frame_two , text = "مبلغ" , font = vazir_font, justify="center" )
 lal_amount.grid(row=0 , column=0 )
 ent_amount = Entry(frame_two, font = vazir_font, justify="center")
@@ -114,28 +112,131 @@ lal_description.grid(row=1 , column =0)
 ent_amout = Entry(frame_two, font = vazir_font, justify="center")
 ent_amout.grid(row=1 , column= 1 , sticky="sn")
 
-bot_deposit = Button(frame_two , text = " واریز " , bg= "green" ,font = vazir_font, justify="center")
+# # ==============================کلید واریز و برداشت 
+# def deposit():
+#     if not amount: 
+#         amount =int(ent_amount.get())
+
+
+
+bot_deposit = Button(frame_two , text = " واریز " , bg= "green" ,font = vazir_font, justify="center" , command=deposit)
 bot_deposit.grid(row=0 , column=2 , sticky= "ns")
 
 bot_withdraw = Button(frame_two , text = "برداشت" , bg= "red", font = vazir_font, justify="center")
 bot_withdraw.grid(row=1, column=2 , sticky= "ns")
-
-
+# ======================================
 
 # با کلیک روی هر دکمه صفحه جدید مخصوص خودش باز بشه 
-# ==================نمایش تراکنش ها 
+# ==================(فیلتر هم همینجا اضافه میکنیم)نمایش تراکنش ها 
+def transactions():
+    win = Toplevel()
+    win.title("transactions list")
+    win.geometry("700x500")
+    win.columnconfigure(0 , weight= 1)
+    win.rowconfigure(0 , weight= 1)
+    win.rowconfigure(1 , weight= 9)
+    lal_transactions = Label(win , text = "transactions",font = vazir_font, justify="center" )
+    lal_transactions.grid(row=0 , column=0)
+    list_box = Listbox(win,font = vazir_font )
+    list_box.grid(row=1 , column=0 , sticky="snew" )
+    list_box.delete(0, END)
+    result= db.get_all_transactions()
+    for i in result:
+            transaction = (
+                f"ID:{i[0]} | "
+                f"amount:{i[1]} | "
+                f"type:{i[2]} | "
+                f"date:{i[3]} | "
+                f"description:{i[4]} "
+            )
+            index = list_box.size()
+            list_box.insert(END, transaction)
 
-bot_transactions = Button(frame_three , text = "نمایش تراکنش ها",font = vazir_font, justify="center")
+            if i[2] == "withdraw":
+                list_box.itemconfig(index , bg = "#ff6b6b")  #red
+            else :
+                list_box.itemconfig(index, bg="#b7f7c1")  # light green
+
+
+bot_transactions = Button(frame_three , text = "نمایش تراکنش ها",font = vazir_font, justify="center" , command=transactions)
 bot_transactions.grid(row=0 , column=0)
 
 #==================== جستجو 
 
-bot_search = Button(frame_three , text = "جستجو",font = vazir_font, justify="center")
+def search():
+    win = Toplevel()
+    win.title("seach transaction")
+    win.geometry("500x500")
+    win.columnconfigure(0 , weight= 1)
+    win.columnconfigure(1 , weight= 1)
+    win.rowconfigure(0 , weight= 1)
+    win.rowconfigure(1 , weight= 1)
+    win.rowconfigure(2 , weight= 9)
+
+    lal_search_amount = Label(win , text = "search amount",font = vazir_font, justify="center" )
+    lal_search_amount.grid(row=0 , column=0)
+    ent_search_amount = Entry(win ,font = vazir_font, justify="center")
+    ent_search_amount.grid(row=0 , column=1)
+    lal_search_date = Label(win , text = "search date ",font = vazir_font, justify="center" )
+    lal_search_date.grid(row=1 , column=0)
+    ent_search_date = Entry(win ,font = vazir_font, justify="center")
+    ent_search_date.grid(row=1 , column=1)
+
+
+    list_box = Listbox(win ,font = vazir_font)
+    list_box.grid(row=2 , column=0  , columnspan= 2, sticky="snew")
+    def entry_key_release(key ):    
+        list_box.delete(0, END)
+        result= db.get_all_transactions()
+        date = ent_search_date.get()
+        amount = ent_search_amount.get()
+        for i in result:
+                transaction = (
+                    f"ID:{i[0]} | "
+                    f"amount:{i[1]} | "
+                    f"type:{i[2]} | "
+                    f"date:{i[3]} | "
+                    f"description:{i[4]} "
+                )
+                index = list_box.size()
+                if amount == "":
+                    if date == i[3].split(" ")[0]:
+                        list_box.insert(END, transaction)
+                        if i[2] == "withdraw":
+                            list_box.itemconfig(index , bg = "#ff6b6b")  #red
+                        else :
+                            list_box.itemconfig(index, bg="#b7f7c1")  # light green
+                    else :
+                        pass
+                elif date =="":
+                    amount = int(amount)
+                    if amount == i [1]:
+                        list_box.insert(END, transaction)
+                        if i[2] == "withdraw":
+                            list_box.itemconfig(index , bg = "#ff6b6b")  #red
+                        else :
+                            list_box.itemconfig(index, bg="#b7f7c1")  # light green
+                    else :
+                        pass
+                else :
+                    amount=int(amount)
+                    if amount == i [1] and date == i[3].split(" ")[0]:
+                        list_box.insert(END, transaction)
+                        if i[2] == "withdraw":
+                            list_box.itemconfig(index , bg = "#ff6b6b")  #red
+                        else :
+                            list_box.itemconfig(index, bg="#b7f7c1")  # light green
+                    else :
+                        pass
+
+
+
+    ent_search_amount.bind('<KeyRelease>' , entry_key_release)
+    ent_search_date.bind('<KeyRelease>' , entry_key_release)
+
+
+bot_search = Button(frame_three , text = "جستجو",font = vazir_font, justify="center" , command = search)
 bot_search.grid(row=0 , column=1)
 
-# ===================(مثلا 10 تراکنش اخر)فیلتر بر اساس تاریخ یا مبلغ یا تعداد تراکنش
-
-bot_filter = Button(frame_three , text = "فیلتر",font = vazir_font, justify="center")
-bot_filter.grid(row=0 , column=2)
 
 window.mainloop()
